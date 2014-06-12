@@ -570,7 +570,7 @@ function simple_ldap_user_load_or_create_by_name($name) {
     $puid_status = simple_ldap_user_update_username_for_puid($puid, $user_name);
   
     // Abort if there is a conflict.
-    if ($puid_status == FALSE) {
+    if ($puid_status === FALSE) {
       return NULL;
     }
 
@@ -805,7 +805,10 @@ function simple_ldap_user_base_field_to_drupal(&$edit, $drupal_user, $ldap_value
       // translate timestamp
       $tz = date_default_timezone_get();
       $timestamp = strtotime($ldap_value);
-      if (!property_exists($drupal_user, $drupal_field_name) || ($drupal_user->$drupal_field_name != $timestamp)) {
+      if (!property_exists($drupal_user, $drupal_field_name)) {
+        $edit[$drupal_field_name] = $timestamp;
+      }
+      else {
         if ($drupal_user->{$drupal_field_name} > $timestamp) {
           $edit['#ignored'][] = $drupal_field_name;
         }
