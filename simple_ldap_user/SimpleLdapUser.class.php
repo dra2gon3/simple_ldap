@@ -305,6 +305,7 @@ class SimpleLdapUser {
 
     // No exceptions were thrown, so the save was successful.
     $this->exists = TRUE;
+    $this->attributes += $this->fetch_puid();
     $this->dirty = array();
     $this->move = FALSE;
     return TRUE;
@@ -415,6 +416,34 @@ class SimpleLdapUser {
    */
   public static function hash($key, $value) {
     self::$hash[$key] = $value;
+  }
+
+  /**
+   * Special function to fetch the PUID of a record.
+   */
+  private function fetch_puid() {
+    // Configuration
+    $base_dn = simple_ldap_user_variable_get('simple_ldap_user_basedn');
+    $scope = simple_ldap_user_variable_get('simple_ldap_user_scope');
+    $puid_attr = strtolower(simple_ldap_user_variable_get('simple_ldap_user_unique_attribute'));
+
+    // Should we bother?
+    if (!$puid_attr || !$this->exists) {
+      return array();
+    }
+
+    try {
+      $result = $this->server->search($this->dn, 'objectclass=*', 'sub', array($puid_attr), 0, 1);
+    } catch (SimpleLdapException $e) {
+      if ($e->getCode() == -1) {
+        $result = array('count' => 0);
+      }
+      else {
+        throw $e;
+      }
+    }
+
+    return ($result['count'] == 1) ? $result[0] : array();
   }
 
 }

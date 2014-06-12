@@ -300,9 +300,9 @@ function simple_ldap_user_user_insert(&$edit, $account, $category) {
     module_invoke_all('sync_user_to_ldap', $account);
 
     // Write out the PUID or the DN to the authmap
-    $puid_attr = simple_ldap_user_variable_get('simple_ldap_user_unique_attribute');
+    $puid_attr = strtolower(simple_ldap_user_variable_get('simple_ldap_user_unique_attribute'));
     $puid_attr = ($puid_attr) ? $puid_attr : 'dn';
-    user_set_authmaps($account, array('authmap_simple_ldap' => $ldap_user->{$puid_attr}));
+    user_set_authmaps($account, array('authmap_simple_ldap' => $ldap_user->{$puid_attr}[0]));
   }
 
 }
