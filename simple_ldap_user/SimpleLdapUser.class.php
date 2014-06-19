@@ -147,6 +147,9 @@ class SimpleLdapUser {
       case 'server':
         return $this->$name;
 
+      case 'dirty':
+        return !empty($this->dirty);
+
       default:
         if (isset($this->attributes[$name])) {
 
@@ -224,6 +227,11 @@ class SimpleLdapUser {
         // Compare the current value with the given value.
         $diff1 = @array_diff($this->attributes[$name], $value);
         $diff2 = @array_diff($value, $this->attributes[$name]);
+
+        // Don't trigger a write if the only difference is the count field,
+        // which may be missing from the $value array.
+        unset($diff1['count']);
+        unset($diff2['count']);
 
         // If there are any differences, update the current value.
         if (!empty($diff1) || !empty($diff2)) {
