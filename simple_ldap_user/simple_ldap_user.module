@@ -591,6 +591,8 @@ function simple_ldap_user_load_or_create_by_name($name) {
       'status' => 1,
     );
     $drupal_user = user_save(NULL, $edit);
+    $authmap_attr = ($puid_attr) ? $puid_attr : 'dn';
+    user_set_authmaps($drupal_user, array('authmap_simple_ldap' => $ldap_user->{$authmap_attr}[0]));
   }
 
   return $drupal_user;
