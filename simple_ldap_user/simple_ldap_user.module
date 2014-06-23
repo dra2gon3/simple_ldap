@@ -785,9 +785,6 @@ function simple_ldap_user_base_field_to_ldap(&$ldap_edit, $account, $drupal_fiel
       if (!empty($file)) {
         $ldap_edit[] = file_get_contents($file->uri);
       }
-      else {
-        $ldap_edit[] = 0;
-      }
       break;
     case 'status':
       $status = (property_exists($account, 'simple_ldap_user_drupal_status')) ? $account->simple_ldap_user_drupal_status : $account->status;
