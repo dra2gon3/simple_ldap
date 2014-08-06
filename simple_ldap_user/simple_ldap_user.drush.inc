@@ -92,6 +92,22 @@ function _simple_ldap_user_drush_found($authname, $user, $ldap_user) {
 
 function _simple_ldap_user_drush_missing($authname, $user) {
   $dummy_context = array();
+
+  // Make sure we don't have an authmap collision.
+  $am_entry = db_query("SELECT uid,authname FROM {authmap} WHERE authname=:puid AND module='simple_ldap'", 
+    array(':puid' => $user['authname'])
+  )->fetchAssoc();
+  if (!empty($am_entry['uid']) && ($am_entry['uid'] != $user['uid'])) {
+    drush_log(dt('    PUID COLLISION: Authname @authname used by both UIDs @this and @that.  Skipping @user.', 
+      array(
+        '@this' => $user['uid'],
+        '@that' => $am_entry['uid'],
+        '@authname' => $user['authname'],
+        '@user' => $user['name'],
+      )), 
+      'error'
+    );
+  }
   simple_ldap_user_export_user($user['uid'], $dummy_context);
   drush_log(dt('Provisioning @user', array('@user' => $user['name'])), 'ok');
 }
@@ -99,7 +115,9 @@ function _simple_ldap_user_drush_missing($authname, $user) {
 function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_callback = NULL) {
   $user_total_count = db_query("SELECT COUNT(*) AS count FROM {users}")->fetchAssoc();
   $user_total_count = $user_total_count['count'];
-  $sql = "SELECT * FROM {users} u";
+  $puid_attr = strtolower(variable_get('simple_ldap_user_unique_attribute', ''));
+  drush_log(dt('Using PUID Attr: @puid', array('@puid' => empty($puid_attr) ? '(none)' : $puid_attr)), 'notice');
+  $sql = "SELECT u.*,a.authname FROM {users} u LEFT JOIN {authmap} a ON a.uid=u.uid AND a.module='simple_ldap'";
 
   $result = db_query($sql);
   if (!$result) {
@@ -116,24 +134,34 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
 
     $user_count++;
     if (($user_count % 1024) == 0) {
-      printf("  %d%% complete (%s)...\r", (int)(100*$user_count / $user_total_count), _formatBytes(memory_get_usage()));
+      printf("  %d%% complete (%s)...\r", (int)(100 * $user_count / $user_total_count), _formatBytes(memory_get_usage()));
       gc_collect_cycles();
     }
 
-    $authname = db_query("SELECT authname FROM {authmap} WHERE uid=:uid", array(':uid' => $user['uid']))->fetchAssoc();
     $ldap_user = SimpleLdapUser::singleton($user['name']);
 
     if (($ldap_user->exists)) {
       drush_log(dt("Found @user (@dn)", array('@user' => $user['name'], '@dn' => $ldap_user->dn)), 'debug');
+
+      if (!empty($puid_attr) && ($user['authname'] != $ldap_user->{$puid_attr}[0])) {
+        drush_log(dt("    User @user: Authmap entry does not match PUID: Authmap: @authname LDAP: @puid", 
+          array(
+            '@authname' => empty($user['authname']) ? "(empty)" : $user['authname'], 
+            '@puid' => empty($ldap_user->{$puid_attr}[0]) ? "(empty)" : $ldap_user->{$puid_attr}[0],
+            '@user' => $user['name'],
+          )
+        ), 'warning');
+      }
+
       if (!empty($found_callback)) {
-        $found_callback($authname, $user, $ldap_user);
+        $found_callback($user['authname'], $user, $ldap_user);
       }
       $found_count++;
     }
     else {
-      drush_log(dt("Missing @user (@dn)", array('@user' => $user['name'], '@dn' => $authname)), 'notice');
+      drush_log(dt("Missing @user (@dn)", array('@user' => $user['name'], '@dn' => $user['authname'])), 'notice');
       if (!empty($not_found_callback)) {
-        $not_found_callback($authname, $user);
+        $not_found_callback($user['authname'], $user);
       }
       $missing_count++;
     }
