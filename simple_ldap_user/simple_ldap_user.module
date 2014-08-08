@@ -299,12 +299,19 @@ function simple_ldap_user_user_insert(&$edit, $account, $category) {
   if (!$ldap_user->exists) {
     module_invoke_all('sync_user_to_ldap', $account);
 
-    // Write out the PUID or the DN to the authmap
-    $puid_attr = strtolower(simple_ldap_user_variable_get('simple_ldap_user_unique_attribute'));
-    $puid_attr = ($puid_attr) ? $puid_attr : 'dn';
-    user_set_authmaps($account, array('authmap_simple_ldap' => $ldap_user->{$puid_attr}[0]));
+    simple_ldap_user_update_authmap($account, $ldap_user);
   }
 
+}
+
+function simple_ldap_user_update_authmap($account, $ldap_user=NULL) {
+  // Write out the PUID or the DN to the authmap
+  if (!$ldap_user) {
+    $ldap_user = SimpleLdapUser::singleton($account->name);
+  }
+  $puid_attr = strtolower(simple_ldap_user_variable_get('simple_ldap_user_unique_attribute'));
+  $puid_attr = ($puid_attr) ? $puid_attr : 'dn';
+  user_set_authmaps($account, array('authmap_simple_ldap' => $ldap_user->{$puid_attr}[0]));
 }
 
 /**
@@ -1110,6 +1117,7 @@ function simple_ldap_user_export_user($uid, &$context) {
   // Sync user to LDAP.
   $account = user_load($uid);
   simple_ldap_user_sync_user_to_ldap($account);
+  simple_ldap_user_update_authmap($account);
   unset($account);
 }
 
