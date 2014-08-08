@@ -107,9 +107,10 @@ function _simple_ldap_user_drush_missing($authname, $user) {
       )), 
       'error'
     );
+    return;
   }
-  simple_ldap_user_export_user($user['uid'], $dummy_context);
   drush_log(dt('Provisioning @user', array('@user' => $user['name'])), 'ok');
+  simple_ldap_user_export_user($user['uid'], $dummy_context);
 }
 
 function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_callback = NULL) {
@@ -159,9 +160,11 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
       $found_count++;
     }
     else {
-      drush_log(dt("Missing @user (@dn)", array('@user' => $user['name'], '@dn' => $user['authname'])), 'notice');
       if (!empty($not_found_callback)) {
         $not_found_callback($user['authname'], $user);
+      }
+      else {
+         drush_log(dt("Missing @user (@dn)", array('@user' => $user['name'], '@dn' => $user['authname'])), 'notice');
       }
       $missing_count++;
     }
