@@ -40,8 +40,8 @@ function simple_ldap_user_drush_export_all() {
 function simple_ldap_user_drush_update_all_puids() {
   // Check there is something to map.
   $puid_attr = strtolower(variable_get('simple_ldap_user_unique_attribute', ''));
-  $attribute_name = simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
-  $attribute_mail = simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
+  $attribute_name = strtolower(simple_ldap_user_variable_get('simple_ldap_user_attribute_name'));
+  $attribute_mail = strtolower(simple_ldap_user_variable_get('simple_ldap_user_attribute_mail'));
 
   $found_count = $missing_count = $warning_count = 0;
 
@@ -54,6 +54,10 @@ function simple_ldap_user_drush_update_all_puids() {
   $result = db_query("SELECT uid,name,mail FROM {users}");
   while ($account = $result->fetchAssoc()) {
     $ldap_user = SimpleLdapUser::singleton($account['name']);
+    if (!$ldap_user->exists) {
+      $missing_count++;
+      continue;
+    }
     if (strcasecmp($ldap_user->{$attribute_name}[0], $account['name'])) {
       drush_log(dt('User "@username" found, but not by name.  Skipping.', array('@username' => $account['name'])), 'warning');
       $warning_count++;
@@ -66,20 +70,18 @@ function simple_ldap_user_drush_update_all_puids() {
           '@drupal_mail' => $account['mail'],
           '@ldap_mail' => $ldap_user->{$attribute_mail}[0],
         ), 'warning')
-      )
+      );
       $warning_count++;
       continue;
     }
-    if ($ldap_user->exists) {
-      db_merge('authmap')->key(array(
-        'uid' => $account['uid'],
-        'module' => 'simple_ldap',
-      ))->fields(array('authname' => $ldap_user->{$puid_attr}[0]))->execute();
-      $found_count++;
-    }
-    else {
-      $missing_count++;
-    }
+
+    // If no issues, write to the authmap
+    db_merge('authmap')->key(array(
+      'uid' => $account['uid'],
+      'module' => 'simple_ldap',
+    ))->fields(array('authname' => $ldap_user->{$puid_attr}[0]))->execute();
+    $found_count++;
+
   }
 
   if ($found_count) {
