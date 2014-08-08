@@ -41,6 +41,7 @@ function simple_ldap_user_drush_update_all_puids() {
   // Check there is something to map.
   $puid_attr = strtolower(variable_get('simple_ldap_user_unique_attribute', ''));
   $attribute_name = simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
+  $attribute_mail = simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
 
   $found_count = $missing_count = $warning_count = 0;
 
@@ -50,11 +51,22 @@ function simple_ldap_user_drush_update_all_puids() {
   }
 
   // For each user, fetch the LDAP record and update the authmap
-  $result = db_query("SELECT uid,name FROM {users}");
+  $result = db_query("SELECT uid,name,mail FROM {users}");
   while ($account = $result->fetchAssoc()) {
     $ldap_user = SimpleLdapUser::singleton($account['name']);
     if (strcasecmp($ldap_user->{$attribute_name}[0], $account['name'])) {
       drush_log(dt('User "@username" found, but not by name.  Skipping.', array('@username' => $account['name'])), 'warning');
+      $warning_count++;
+      continue;
+    }
+    if (strcasecmp($ldap_user->{$attribute_mail}[0], $account['mail'])) {
+      drush_log(dt('Mail attribute for user "@username" does not match: @drupal_mail != @ldap_mail', 
+        array(
+          '@username' => $account['name'],
+          '@drupal_mail' => $account['mail'],
+          '@ldap_mail' => $ldap_user->{$attribute_mail}[0],
+        ), 'warning')
+      )
       $warning_count++;
       continue;
     }
