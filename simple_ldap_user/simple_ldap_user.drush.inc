@@ -30,6 +30,10 @@ function simple_ldap_user_drush_command() {
       'missing-count' => 'Stop the run after aa certain number of users are not found in LDAP.  (Useful to prevent memory exhustion.)', 
     ),
   );
+  $items['ldap-mail-collison-check'] = array(
+    'description' => 'Check for two users who have the same email address',
+    'callback' => '_simple_ldap_user_check_existing_by_mail',
+  );
   $items['ldap-update-all-puids'] = array(
     'description' => 'For all users in Drupal, update the authmap with the PUID from LDAP.',
     'callback' => 'simple_ldap_user_drush_update_all_puids',
@@ -101,6 +105,77 @@ function simple_ldap_user_drush_update_all_puids() {
   if ($warning_count) {
     drush_log(dt('Detected @warning with anomalous entries.', array('@warning' => format_plural($warning_count, '1 user', '@count users'))), 'warning');
   } 
+}
+
+function _simple_ldap_user_check_existing_by_mail() {
+  $mismatch_count = 0;
+
+  $name_attr = variable_get('simple_ldap_user_attribute_name', 'uid');
+  $scope = variable_get('simple_ldap_user_scope', 'sub');
+  $base_dn = variable_get('simple_ldap_user_basedn', NULL);
+  if (!$base_dn) {
+    drush_log(dt('No base DN set.'), 'error');
+    return;
+  }
+
+  $server = SimpleLdapServer::singleton();
+  if (!$server) {
+    drush_log(dt('Could not connect to server.'), 'error');
+    return;
+  }
+
+  $user_total_count = db_query("SELECT COUNT(*) AS count FROM {users}")->fetchAssoc();
+  $user_total_count = $user_total_count['count'];
+  $user_count = $collisions = 0;
+
+  $attrs = array($name_attr);
+  $result = db_query("SELECT uid,name,mail FROM {users}");
+  while($row = $result->fetchAssoc()) {
+
+    $user_count++;
+    if (($user_count % 1024) == 0) {
+      gc_collect_cycles();
+      printf("  %d%% complete (%s u: %d, c: %d)...\r", (int)(100 * $user_count / $user_total_count), _formatBytes(memory_get_usage()), $user_count, $collisions);
+    }
+
+    $filter = 'mail=' . $row['mail'];
+    $ldap_records = $server->search($base_dn, $filter, $scope, $attrs);
+
+    if ($ldap_records['count'] > 1) {
+      $count = $ldap_records['count'];
+      unset($ldap_records['count']);
+      $names = array();
+      foreach($ldap_records as $n) {
+        $names[] = $n[$name_attr][0];
+      }
+      $data = array(
+        '@email' => $row['mail'],
+        '@count' => $count,
+        '@users' => implode(', ', $names),
+      );
+      drush_log(dt('Email address @email used by @count users: @users', $data), 'error');
+      $collisions++;
+      continue;
+    }
+
+    if ($ldap_records['count'] && strtolower($ldap_records[0][$name_attr][0]) !== strtolower($row['name'])) {
+      $data = array(
+        '@email' => $row['mail'],
+        '@drupal_name' => $row['name'],
+        '@ldap_name' => $ldap_records[0][$name_attr][0],
+      );
+      drush_log(dt('Username for email address @email does not match LDAP.  Drupal: @drupal_name LDAP: @ldap_name', $data), 'error');
+      $collisions++;
+      continue;
+    }
+  }
+  printf("100%% complete (%s / %s)...\nDone\n", _formatBytes(memory_get_usage()), _formatBytes(memory_get_peak_usage()));
+  if ($collisions) {
+    drush_log(dt('Found @bad collisions among @count users.', array('@bad' => $collisions, '@count' => $user_count)), 'error');
+  }
+  else {
+    drush_log(dt('No collisions found among all @count users.', array('@count' => $user_count)), 'ok');
+  }
 }
 
 function _simple_ldap_user_drush_found($authname, $user, $ldap_user) {
