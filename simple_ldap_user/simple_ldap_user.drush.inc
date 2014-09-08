@@ -17,10 +17,18 @@ function simple_ldap_user_drush_command() {
   $items['ldap-export-all'] = array(
     'description' => 'Export all users in Drupal that are not in LDAP',
     'callback' => 'simple_ldap_user_drush_export_all',
+    'options' => array(
+      'found-count' => 'Stop the run after aa certain number of users are found in LDAP.  (Useful to prevent memory exhustion.)', 
+      'missing-count' => 'Stop the run after aa certain number of users are not found in LDAP.  (Useful to prevent memory exhustion.)', 
+    ),
   );
   $items['ldap-check-all'] = array(
     'description' => 'Check all users in Drupal are in LDAP',
     'callback' => 'simple_ldap_user_drush_check_all',
+    'options' => array(
+      'found-count' => 'Stop the run after aa certain number of users are found in LDAP.  (Useful to prevent memory exhustion.)', 
+      'missing-count' => 'Stop the run after aa certain number of users are not found in LDAP.  (Useful to prevent memory exhustion.)', 
+    ),
   );
   $items['ldap-update-all-puids'] = array(
     'description' => 'For all users in Drupal, update the authmap with the PUID from LDAP.',
@@ -123,11 +131,22 @@ function _simple_ldap_user_drush_missing($authname, $user) {
     );
     return;
   }
-  drush_log(dt('Provisioning @user', array('@user' => $user['name'])), 'ok');
+  drush_log(dt('Provisioning @user', array('@user' => $user['name'])), 'notice');
   simple_ldap_user_export_user($user['uid'], $dummy_context);
 }
 
 function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_callback = NULL) {
+  $found_limit = drush_get_option('found-count');
+  $missing_limit = drush_get_option('missing-count');
+
+  if ($found_limit) {
+    drush_log(dt('Will exit after @count records are found.', array('@count' => $found_limit)), 'notice');
+  }
+
+  if ($missing_limit) {
+    drush_log(dt('Will exit after @count records are not found.', array('@count' => $missing_limit)), 'notice');
+  }
+
   $user_total_count = db_query("SELECT COUNT(*) AS count FROM {users}")->fetchAssoc();
   $user_total_count = $user_total_count['count'];
   $puid_attr = strtolower(variable_get('simple_ldap_user_unique_attribute', ''));
@@ -140,7 +159,7 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
     return;
   }
 
-  $user_count = $found_count = $missing_count = 0;
+  $bad_count = $user_count = $found_count = $missing_count = 0;
 
   while($user = $result->fetchAssoc()) {
     if ($user['uid'] < 2) {
@@ -149,8 +168,14 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
 
     $user_count++;
     if (($user_count % 1024) == 0) {
-      printf("  %d%% complete (%s)...\r", (int)(100 * $user_count / $user_total_count), _formatBytes(memory_get_usage()));
       gc_collect_cycles();
+      printf("  %d%% complete (%s m: %d, f: %d)...\r", (int)(100 * $user_count / $user_total_count), _formatBytes(memory_get_usage()), $missing_count, $found_count);
+    }
+
+    if (strpos($user['name'], ',') !== FALSE) {
+      drush_log(dt('User %username contains illegal characters.  Skipping.', array('%username' => $user['name'])), 'error');
+      $bad_count++;
+      continue;
     }
 
     $ldap_user = SimpleLdapUser::singleton($user['name']);
@@ -172,6 +197,10 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
         $found_callback($user['authname'], $user, $ldap_user);
       }
       $found_count++;
+      if (($found_limit) && ($found_count >= $found_limit)) {
+        drush_log(dt('Exiting after finding @found records.', array('@found' => $found_limit)), 'warning');
+        break;
+      }
     }
     else {
       if (!empty($not_found_callback)) {
@@ -181,6 +210,10 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
          drush_log(dt("Missing @user (@dn)", array('@user' => $user['name'], '@dn' => $user['authname'])), 'notice');
       }
       $missing_count++;
+      if (($missing_limit) && ($missing_count >= $missing_limit)) {
+        drush_log(dt('Exiting after not finding @missing records.', array('@missing' => $missing_limit)), 'warning');
+        break;
+      }
     }
     SimpleLdapUser::reset();
     unset($user);
@@ -191,6 +224,7 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
   if ($missing_count > 0) {
     drush_log(dt('Found @found with LDAP records.', array('@found' => format_plural($found_count, '1 user', '@count users'))), 'warning');
     drush_log(dt('Missing @missing.', array('@missing' => format_plural($missing_count, '1 user', '@count users'))), 'warning');
+    drush_log(dt('Found @bad with unusable usernames.', array('@bad' => format_plural($bad_count, '1 user', '@count users'))), 'warning');
     drush_log(dt("Run with --verbose to see the list of missing users."), 'warning');
   } else {
     drush_log(dt('Found all @found', array('@found' => format_plural($found_count, '1 user', '@count users'))), 'ok');
