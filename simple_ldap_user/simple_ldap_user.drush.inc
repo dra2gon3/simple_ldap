@@ -108,8 +108,6 @@ function simple_ldap_user_drush_update_all_puids() {
 }
 
 function _simple_ldap_user_check_existing_by_mail() {
-  $mismatch_count = 0;
-
   $name_attr = variable_get('simple_ldap_user_attribute_name', 'uid');
   $scope = variable_get('simple_ldap_user_scope', 'sub');
   $base_dn = variable_get('simple_ldap_user_basedn', NULL);
@@ -206,11 +204,29 @@ function _simple_ldap_user_drush_missing($authname, $user) {
     );
     return;
   }
+
   drush_log(dt('Provisioning @user', array('@user' => $user['name'])), 'notice');
   simple_ldap_user_export_user($user['uid'], $dummy_context);
 }
 
 function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_callback = NULL) {
+  // Get the default search params.
+  $name_attr = variable_get('simple_ldap_user_attribute_name', 'uid');
+  $scope = variable_get('simple_ldap_user_scope', 'sub');
+  $base_dn = variable_get('simple_ldap_user_basedn', NULL);
+  if (!$base_dn) {
+    drush_log(dt('No base DN set.'), 'error');
+    return;
+  }
+  $attrs = array($name_attr);
+
+  $server = SimpleLdapServer::singleton();
+  if (!$server) {
+    drush_log(dt('Could not connect to server.'), 'error');
+    return;
+  }
+
+  // Get ready for the run.
   $found_limit = drush_get_option('found-count');
   $missing_limit = drush_get_option('missing-count');
 
@@ -254,6 +270,23 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
     }
 
     $ldap_user = SimpleLdapUser::singleton($user['name']);
+    $filter = 'mail=' . $user['mail'];
+    $ldap_users_by_mail = $server->search($base_dn, $filter, $scope, $attrs);
+    if ($ldap_users_by_mail['count'] > 1) {
+      drush_log(dt('Multiple LDAP users have the email address @email.  Skipping.', array('@email' => $user['mail'])), 'error');
+      continue;
+    }
+
+    if ($ldap_users_by_mail['count'] && strtolower($ldap_users_by_mail[0][$name_attr][0]) !== strtolower($user['name'])) {
+      drush_log(dt('Drupal User @drupal_user and LDAP record @ldap_name use the same email @email. Skipping.',
+        array(
+          '@drupal_user' => $user['name'],
+          '@ldap_name' => $ldap_users_by_mail[0][$name_attr][0],
+          '@email' => $user['mail'],
+        )
+      ), 'error');
+      continue;
+    }
 
     if (($ldap_user->exists)) {
       drush_log(dt("Found @user (@dn)", array('@user' => $user['name'], '@dn' => $ldap_user->dn)), 'debug');
