@@ -301,6 +301,17 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
         ), 'warning');
       }
 
+      if (!empty($ldap_user->mail[0]) && $ldap_user->mail[0] !== $user['mail']) {
+        drush_log(dt('    User @user has Drupal email @drupal_mail and LDAP email @ldap_mail.  Skipping.',
+          array(
+            '@user' => $user['name'],
+            '@drupal_mail' => $user['mail'],
+            '@ldap_mail' => $ldap_user->mail[0],
+          )
+        ), 'warning');
+        continue;
+      }
+
       if (!empty($found_callback)) {
         $found_callback($user['authname'], $user, $ldap_user);
       }
