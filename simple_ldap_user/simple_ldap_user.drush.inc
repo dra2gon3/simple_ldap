@@ -259,6 +259,10 @@ function simple_ldap_user_drush_scan_all($found_callback = NULL, $not_found_call
 
     $user_count++;
     if (($user_count % 1024) == 0) {
+      // Clear caches we won't need.
+      entity_get_controller('file')->resetCache();
+      entity_get_controller('user')->resetCache();
+      // Clean up memory.
       gc_collect_cycles();
       printf("  %d%% complete (%s m: %d, f: %d)...\r", (int)(100 * $user_count / $user_total_count), _formatBytes(memory_get_usage()), $missing_count, $found_count);
     }
