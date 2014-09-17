@@ -808,9 +808,24 @@ function simple_ldap_user_base_field_to_drupal(&$edit, $drupal_user, $ldap_value
     case 'access':
     case 'login':
     case 'created':
+      // Never overwrite timestamps with NULL from a missing attribute
+      if ($ldap_value === NULL) {
+        break;
+      }
       // translate timestamp
       $tz = date_default_timezone_get();
       $timestamp = strtotime($ldap_value);
+      // Bad data?  Report, but don't copy.
+      if ($timestamp === FALSE) {
+        watchdog('SimpleLDAP', 'Invalid data trying to map LDAP to @drupal_field for user UID @user.', 
+          array(
+            '@drupal_field' => $drupal_field_name,
+            '@user' => $drupal_user->uid,
+          ),
+        WATCHDOG_WARNING);
+        break;
+      }
+
       if (!property_exists($drupal_user, $drupal_field_name)) {
         $edit[$drupal_field_name] = $timestamp;
       }
