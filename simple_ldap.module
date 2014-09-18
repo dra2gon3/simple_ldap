@@ -54,3 +54,12 @@ function simple_ldap_configured() {
 
   return $configured;
 }
+
+function simple_ldap_timestamp_to_ldap_time($ts) {
+  $tz = date_default_timezone_get();
+  date_default_timezone_set('UTC');
+  $ldap_time = date('YmdHis', $ts) . 'Z';
+  date_default_timezone_set($tz);
+
+  return $ldap_time;
+}
