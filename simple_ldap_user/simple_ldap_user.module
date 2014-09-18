@@ -810,6 +810,9 @@ function simple_ldap_user_base_field_to_drupal(&$edit, $drupal_user, $ldap_value
     case 'created':
       // Never overwrite timestamps with NULL from a missing attribute
       if ($ldap_value === NULL) {
+        if (!empty($drupal_user->{$drupal_field_name})) {
+          $edit['#ignored'][] = $drupal_field_name;
+        }
         break;
       }
       // translate timestamp
