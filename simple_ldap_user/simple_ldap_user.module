@@ -529,7 +529,7 @@ function simple_ldap_user_register_form_validate($form, &$form_state) {
       form_set_error('name', t('A user with that username is already registered, but not with that email address.'));
     }
     else if (empty($name_dn)) {
-      form_set_error('mail', t('A user with that email address is already registerd, but not with that user name.'));
+      form_set_error('mail', t('A user with that email address is already registered, but not with that user name.'));
     }
     else {
       form_set_error('name', t('That username is already in use with a different email address.'));
