@@ -84,6 +84,39 @@ function simple_ldap_admin() {
     $form['directory']['simple_ldap_pagesize']['#description'] = t('Paged queries are not supported by this PHP installation.') . ' ' . t('Support was added in PHP version 5.4.');
   }
 
+  $form['ldap_down'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('LDAP Server Failure'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['ldap_down']['simple_ldap_ldap_down_maintenance_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Maintenance Mode on LDAP Failure'),
+    '#description' => t('Check this to force the site into maintenance mode if no LDAP servers can be reached.'),
+    '#default_value' => variable_get('simple_ldap_ldap_down_maintenance_mode', TRUE),
+  );
+  $form['ldap_down']['simple_ldap_ldap_down_message'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maintenance Mode Message on LDAP Failure'),
+    '#description' => t('The message to show everyone when LDAP goes down.'),
+    '#default_value' => variable_get('simple_ldap_ldap_down_message', t('The site is experiencing technical difficulties.')),
+  );
+  $form['ldap_down']['simple_ldap_ldap_down_notify_list'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Notification List'),
+    '#description' => t('Specify the list of email addresses to be notified when the LDAP server goes down, one per line.'),
+    '#default_value' => variable_get('simple_ldap_ldap_down_notify_list', ''),
+  );
+  $form['ldap_down']['simple_ldap_ldap_down_notify_frequency'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notification Frequency'),
+    '#description' => t('How often, in minutes, should the notify list be realerted?  Set to 0 for notify once per outage.'),
+    '#default_value' => variable_get('simple_ldap_ldap_down_notify_frequency', '30'),
+    '#size' => 4,
+  );
+
+
   // Advanced settings.
   $form['advanced'] = array(
     '#type' => 'fieldset',
