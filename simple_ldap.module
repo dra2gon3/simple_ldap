@@ -45,10 +45,6 @@ function simple_ldap_menu() {
 function simple_ldap_init() {
   global $conf;
 
-  if(!variable_get('simple_ldap_ldap_down_maintenance_mode', TRUE)) {
-    return;
-  }
-
   // LDAP server connection parameters
   $host = variable_get('simple_ldap_host', '');
   $port = variable_get('simple_ldap_port', '389');
@@ -75,22 +71,28 @@ function simple_ldap_init() {
   $last_notify = variable_get('simple_ldap_last_down_notify', 0);
   $notify_frequency = variable_get('simple_ldap_ldap_down_notify_frequency', '30');
 
-  // Set $conf directly so the site will automatically come back when LDAP 
-  // is restored.
-  $conf['maintenance_mode'] = 1;
-  $conf['maintenance_mode_message'] = variable_get('simple_ldap_ldap_down_message', t('The site is experiencing technical difficulties.'));
-  if (user_access('access site in maintenance mode')) {
-    drupal_set_message(t('SITE OFFLINE: Cannot connect to any LDAP servers. Check <a href="@ldap_config">the LDAP configuration</a>', array('@ldap_config' => url('admin/config/people/simple_ldap/server'))), 'error');
-  }
-
+  // Send notifications
   $recipients = trim(implode(',', explode("\n", variable_get('simple_ldap_ldap_down_notify_list', NULL))));
   if (!empty($recipients)) {
     // Send if we've just seen it go down, or if it's still down and
-    // it's been 30 minutes since the last cry for help.
-    if (($last_good > $last_notify) || ($notify_frequency && (time() > $last_notify * ($notify_frequency*60)))) {
+    // it's been some number of minutes since the last cry for help.
+    if (($last_good > $last_notify) || ($notify_frequency && (time() > $last_notify + ($notify_frequency*60)))) {
       drupal_mail('simple_ldap', 'ldap_down', $recipients, 'en');
       variable_set('simple_ldap_last_down_notify', time());
     }
+  }
+
+  // Optionally, put the site into maintenance mode.
+  if(variable_get('simple_ldap_ldap_down_maintenance_mode', TRUE)) {
+    // Set $conf directly so the site will automatically come back when LDAP 
+    // is restored.
+    $conf['maintenance_mode'] = 1;
+    $conf['maintenance_mode_message'] = variable_get('simple_ldap_ldap_down_message', t('The site is experiencing technical difficulties.'));
+  }
+
+  // Tell the admins LDAP is down.
+  if (user_access('access site in maintenance mode')) {
+    drupal_set_message(t('LDAP OFFLINE: Cannot connect to any LDAP servers. Check <a href="@ldap_config">the LDAP configuration</a>', array('@ldap_config' => url('admin/config/people/simple_ldap/server'))), 'error');
   }
 }
 
