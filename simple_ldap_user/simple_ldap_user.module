@@ -152,7 +152,7 @@ function simple_ldap_user_form_alter(&$form, &$form_state, $form_id) {
           }
         }
       }
-      array_unshift($form['#validate'], 'simple_ldap_user_register_form_validate');
+      array_unshift($form['#validate'], 'simple_ldap_user_profile_form_validate');
       break;
 
     case 'user_register_form':
@@ -524,7 +524,6 @@ function simple_ldap_user_register_form_validate($form, &$form_state) {
   $ldap_user_by_mail = SimpleLdapUser::singleton($form_state['values']['mail']);
   $name_dn = $ldap_user_by_name->dn;
   $mail_dn = $ldap_user_by_mail->dn;
-  $user = empty($form_state['user']) ? NULL : $form_state['user'];
 
   if ($name_dn !== $mail_dn) {
     if (empty($mail_dn)) {
@@ -534,18 +533,37 @@ function simple_ldap_user_register_form_validate($form, &$form_state) {
       form_set_error('mail', t('A user with that email address is already registered, but not with that user name.'));
     }
     else {
-      // If the $form_state['user'] is set, we're editing an existing user
-      if ($user) {
-        if (strtolower($user->name) !== strtolower($form_state['values']['name'])) {
-          form_set_error('name', t('That name is already in use.'));
-        }
-        if (strtolower($user->mail) !== strtolower($form_state['values']['mail'])) {
-          form_set_error('mail', t('That email address is already in use.'));
-        }
-      }
-      else {
-        form_set_error('name', t('That username is already in use with a different email address.'));        
-      }
+      form_set_error('name', t('That username is already in use with a different email address.'));        
+    }
+  }
+}
+
+function simple_ldap_user_profile_form_validate($form, &$form_state) {
+  $ldap_user_by_name = SimpleLdapUser::singleton($form_state['values']['name']);
+  $ldap_user_by_mail = SimpleLdapUser::singleton($form_state['values']['mail']);
+  $account = $form_state['user'];
+  $ldap_user = SimpleLdapUser::singleton($account->name);
+
+  // Pull all three DNs
+  $name_dn = $ldap_user_by_name->dn;
+  $mail_dn = $ldap_user_by_mail->dn;
+  $user_dn = $ldap_user->dn;
+
+  // Make sure he doesn't collide with an existing LDAP user
+  if (!$ldap_user->exists) {
+    if ($ldap_user_by_name->exists) {
+      form_set_error('name', t('Another user has that username.'));
+    }
+    if ($ldap_user_by_mail->exists) {
+      form_set_error('mail', t('Another user has that email address.'));
+    }
+  }
+  else {
+    if (($user_dn !== $name_dn) && $ldap_user_by_name->exists) {
+      form_set_error('name', t('Another user has that username.'));
+    }
+    if (($user_dn !== mail_dn) && $ldap_user_by_mail->exists) {
+      form_set_error('mail', t('Another user has that email address.'));
     }
   }
 }
