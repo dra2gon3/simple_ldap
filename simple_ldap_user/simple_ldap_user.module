@@ -562,7 +562,7 @@ function simple_ldap_user_profile_form_validate($form, &$form_state) {
     if (($user_dn !== $name_dn) && $ldap_user_by_name->exists) {
       form_set_error('name', t('Another user has that username.'));
     }
-    if (($user_dn !== mail_dn) && $ldap_user_by_mail->exists) {
+    if (($user_dn !== $mail_dn) && $ldap_user_by_mail->exists) {
       form_set_error('mail', t('Another user has that email address.'));
     }
   }
