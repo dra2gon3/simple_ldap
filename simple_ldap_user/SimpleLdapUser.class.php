@@ -37,7 +37,7 @@ class SimpleLdapUser {
     $safe_name = preg_replace(array('/\(/', '/\)/'), array('\\\(', '\\\)'), $name);
 
     // Search first for the user by name, then by email and finally by PUID.
-    // Ensures that if someone has a username that is an email address, we find only 
+    // Ensures that if someone has a username that is an email address, we find only
     // one record.
     $filter_list = array();
     $filter_list[] = '(&(' . $attribute_name . '=' . $safe_name . ')' . self::filter() . ')';
@@ -49,7 +49,7 @@ class SimpleLdapUser {
     // List of attributes to fetch from the LDAP server.
     // Using key => value autmatically dedups the list.
     $attributes = array(
-      $attribute_name => $attribute_name, 
+      $attribute_name => $attribute_name,
       $attribute_mail => $attribute_mail
     );
     $attribute_map = simple_ldap_user_variable_get('simple_ldap_user_attribute_map');
@@ -254,6 +254,9 @@ class SimpleLdapUser {
    */
   public function authenticate($password) {
     if ($this->exists) {
+      if ($password[0] === chr(0)) {
+        $password[0] = chr(0x20);
+      }
       $auth = $this->server->bind($this->dn, $password);
       return $auth;
     }
