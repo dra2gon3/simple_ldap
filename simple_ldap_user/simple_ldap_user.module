@@ -234,9 +234,11 @@ function simple_ldap_user_user_presave(&$edit, $account, $category) {
     $account->status = $account->simple_ldap_user_drupal_status;
   }
   // To make sure we've covered all our bases, we also set $account->original's
-  // status back to what is in the database as well.
+  // status back to what is in the database as well. This avoids Drupal sending
+  // account activation emails in user_save(), which it will do if it detects
+  // that the status has changed from $account->original to $account.
   if (isset($account->original) && isset($account->original->simple_ldap_user_drupal_status)) {
-    $account->original->status = $account->simple_ldap_user_drupal_status;
+    $account->original->status = $account->original->simple_ldap_user_drupal_status;
   }
 
   if ($account->is_new && isset($edit['name'])) {
