@@ -81,7 +81,7 @@ function simple_ldap_admin() {
   if (!function_exists('ldap_control_paged_result_response') && !function_exists('ldap_control_paged_result')) {
     $form['directory']['simple_ldap_pagesize']['#disabled'] = TRUE;
     $form['directory']['simple_ldap_pagesize']['#default_value'] = '';
-    $form['directory']['simple_ldap_pagesize']['#description'] = t('Paged queries are not supported by this PHP installation.') . ' ' . t('Support was added in PHP version 5.4.');
+    $form['directory']['simple_ldap_pagesize']['#description'] = t('Paged queries are not supported by this PHP installation.  Support was added in PHP version 5.4.');
   }
 
   $form['ldap_down'] = array(
@@ -149,8 +149,8 @@ function simple_ldap_server_check() {
   $results = array();
 
   if (empty($ldap_host)) {
-    $error = t('No host speciifed.  Set a host in !ldap_settings and try again.', 
-      array('!ldap_settings' => l(t('LDAP Settings'), 'admin/config/people/simple_ldap/server/settings'))
+    $error = t('No host speciifed.  Set a host in <a href="@url">LDAP Settings</a> and try again.',
+      array('@url' => url('admin/config/people/simple_ldap/server/settings'))
     );
     return "<p>$error</p>";
   }
@@ -159,9 +159,9 @@ function simple_ldap_server_check() {
   preg_match('/(ldap[si]?):\/\/([^:\/]*)(:(\d*))?(\/)?(.*)/', $ldap_host, $matches);
 
   if (empty($matches)) {
-    $error = t('Could not parse host %host.  Check !ldap_settings and try again.', 
+    $error = t('Could not parse host %host.  Check <a href="@url">LDAP Settings</a> and try again.',
       array(
-        '!ldap_settings' => l(t('LDAP Settings'), 'admin/config/people/simple_ldap/server/settings'),
+        '@url' => url('admin/config/people/simple_ldap/server/settings'),
         '%host' => $ldap_host,
       )
     );
@@ -217,7 +217,7 @@ function simple_ldap_server_check() {
     }
 
     if (($ip_list === FALSE) || ($hostname === FALSE)) {
-      $dns_result = t('Could not fetch DNS information abotu @address', array('@address' => $host));
+      $dns_result = t('Could not fetch DNS information about @address', array('@address' => $host));
       $status = 'ldap-test-warning';
     }
     else {
@@ -236,7 +236,7 @@ function simple_ldap_server_check() {
 
   //
   // Test 3 - Make a simple TCP connection to the server and port.
-  // 
+  //
   // If this test fails, then it's probably a connectivity issue.
   //
   if (!empty($host)) {
@@ -258,8 +258,8 @@ function simple_ldap_server_check() {
       'data' => array(
         t('TCP Connection Check'),
         t($connect_test, array(
-          '%host' => $host, 
-          '%port' => $port, 
+          '%host' => $host,
+          '%port' => $port,
           '@time' => (int)(($stoptime - $starttime) * 1000),
           '@error' => $errStr,
         )),
@@ -310,7 +310,7 @@ function simple_ldap_server_check() {
         t('Success'),
       ),
     );
-  } 
+  }
   else {
     $results[] = array(
       'class' => array('ldap-test-error'),
@@ -353,7 +353,7 @@ function simple_ldap_server_check() {
   //
   // Test 7 - Pull the list of supported ObjectClasses.
   //
-  $error = '';  
+  $error = '';
   try {
     $objectclasses = $server->schema->get('objectclasses');
   }
@@ -365,7 +365,7 @@ function simple_ldap_server_check() {
       'class' => array('ldap-test-warning'),
       'data' => array(
         t('Object Classes'),
-        t('No object classes found. ' . $error),
+        t('No object classes found. @error', array('@error' =>  $error)),
       ),
     );
   }
@@ -380,7 +380,7 @@ function simple_ldap_server_check() {
   }
 
 
-  // 
+  //
   // Generate the report
   //
   $header = array(

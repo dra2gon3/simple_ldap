@@ -258,7 +258,7 @@ function user_check_password($password, $account) {
   if ($ldap_user->exists && empty($ldap_password) && in_array('nopass', $fallback, TRUE)) {
     $valid_password = simple_ldap_user_check_drupal_password($password, $account);
     if ($valid_password && in_array('nopass', $fallback_writeback, TRUE)) {
-      $account->writeback_password = TRUE; 
+      $account->writeback_password = TRUE;
     }
   }
   // If the user is NOT in LDAP at all, AND we are set to fallback to Drupal, check Drupal
@@ -280,10 +280,10 @@ function user_check_password($password, $account) {
  *
  * @param string $password
  *    The password to be checked.
- * 
+ *
  * @param object $account
  *    The account to be authenticated.
- * 
+ *
  * @return boolean
  *    Returns TRUE if the password matches.
  */
@@ -359,7 +359,7 @@ function simple_ldap_user_form_simple_ldap_user_admin_alter(&$form, &$form_state
       'nopass' => t('fallback to Drupal if LDAP password is empty'),
       'norecord' => t('fallback to Drupal if no LDAP record exists'),
     ),
-    '#description' => t('Simple LDAP can fallback to using the password saved in the Drupal database.  Select when (if ever) this should be done.  Requires a password attribute to be seelcted above.'),
+    '#description' => t('Simple LDAP can fallback to using the password saved in the Drupal database.  Select when (if ever) this should be done.  Requires a password attribute to be selected above.'),
     '#default_value' => simple_ldap_user_variable_get('simple_ldap_user_auth_fallback'),
   );
 
