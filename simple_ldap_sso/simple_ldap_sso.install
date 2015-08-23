@@ -55,9 +55,9 @@ function simple_ldap_sso_requirements($phase) {
   );
 
   if ($errors) {
-    $t_args = array('!url' => url('admin/config/people/simple_ldap/sso'));
+    $t_args = array('@url' => url('admin/config/people/simple_ldap/sso'));
     $items['simple_ldap_sso_configured']['description'] = theme('item_list', array('items' => $errors));
-    $items['simple_ldap_sso_configured']['description'] .= $t('Please visit the module’s <a href="!url">configuration form</a> to configure Simple LDAP SSO.', $t_args);
+    $items['simple_ldap_sso_configured']['description'] .= $t('Please visit the module’s <a href="@url">configuration form</a> to configure Simple LDAP SSO.', $t_args);
   }
 
   return $items;

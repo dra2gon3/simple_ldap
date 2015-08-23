@@ -68,8 +68,8 @@ function simple_ldap_configuration_errors() {
 
   // Ensure mcrypt is available.
   if (!extension_loaded('mcrypt')) {
-    $t_args['!url'] = 'http://php.net/mcrypt';
-    $errors[] = t('You must have the <a href="!url">PHP mcrypt extension</a> installed.', $t_args);
+    $t_args['@url'] = 'http://php.net/mcrypt';
+    $errors[] = t('You must have the <a href="@url">PHP mcrypt extension</a> installed.', $t_args);
   }
 
   return $errors;

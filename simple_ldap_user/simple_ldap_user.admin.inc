@@ -8,7 +8,7 @@
  * Simple LDAP User configuration form.
  */
 function simple_ldap_user_admin($form, &$form_state) {
-  // If we're the one's doing password management, we have a hook_form_FORM_ID_alter() to include. 
+  // If we're the one's doing password management, we have a hook_form_FORM_ID_alter() to include.
   require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
 
   $form = array();
@@ -18,12 +18,13 @@ function simple_ldap_user_admin($form, &$form_state) {
 
   // Verify LDAP server connectivity.
   if (!$server->bind()) {
-    drupal_set_message(t('Unable to bind to the LDAP server.') . ' ' . l(t('Check the server configuration.'), 'admin/config/people/simple_ldap'), 'warning');
+    drupal_set_message(t('Unable to bind to the LDAP server.  Check the <a href="@url">server configuration.</a>',
+      array('@url' => url('admin/config/people/simple_ldap'))), 'warning');
     return $form;
   }
 
   // String to append to items disabled by $server->readonly.
-  $disabled_note = $server->readonly ? ' (' . t('Disabled by LDAP Server configuration.') . ')' : '';
+  $disabled_note = $server->readonly ? t('(Disabled by LDAP Server configuration.)') : '';
 
   // Generate a list of object classes supported by the server.
   $objectclasses = $server->schema->get('objectclasses');
@@ -96,8 +97,8 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Search scope'),
     '#options' => array(
-      'sub' => t('Subtree') . ' - ' . t('Search the base DN and all of its children for user accounts.'),
-      'one' => t('One-level') . ' - ' . t('Do not include children of the base DN while searching for user accounts.'),
+      'sub' => t('Subtree -  Search the base DN and all of its children for user accounts.'),
+      'one' => t('One-level -  Do not include children of the base DN while searching for user accounts.'),
     ),
     '#required' => TRUE,
     '#default_value' => simple_ldap_user_variable_get('simple_ldap_user_scope'),
@@ -125,7 +126,7 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#prefix' => '<div id="simple-ldap-user-attributes">',
     '#options' => $attributes,
     '#required' => TRUE,
-    '#description' => t('Which LDAP attribute should be mapped to a Drupal username.') . ' ' . t('This is commonly "cn" or "uid".'),
+    '#description' => t('Which LDAP attribute should be mapped to a Drupal username.  This is commonly "cn" or "uid".'),
     '#disabled' => $readonly,
   );
 
@@ -140,7 +141,7 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#title' => t('Email attribute'),
     '#options' => $attributes,
     '#required' => TRUE,
-    '#description' => t("Which LDAP attribute should be mapped to a Drupal user's email address.") . ' ' . t('This is commonly "mail".'),
+    '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s email address.  This is commonly "mail".'),
     '#disabled' => $readonly,
   );
 
@@ -155,7 +156,7 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#title' => t('Password attribute') . $disabled_note,
     '#suffix' => '</div>',
     '#options' => $attributes,
-    '#description' => t("Which LDAP attribute should be mapped to a Drupal user's password.") . ' ' . t('This is only used for password resets, not for authentication, and is commonly "userPassword".'),
+    '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s password.  This is only used for password resets, not for authentication, and is commonly "userPassword".'),
     '#disabled' => $readonly || $server->readonly,
     '#empty_value' => FALSE,
   );
@@ -188,7 +189,7 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Search filter'),
     '#default_value' => simple_ldap_user_variable_get('simple_ldap_user_filter'),
-    '#description' => t('This filter will be combined with the normal search filter to find users.') . ' ' . t('This can be used to require a certain attribute be present, for example.'),
+    '#description' => t('This filter will be combined with the normal search filter to find users.  This can be used to require a certain attribute be present, for example.'),
   );
 
   $form['advanced']['simple_ldap_user_source'] = array(
@@ -207,8 +208,8 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Synchronization trigger'),
     '#options' => array(
-      'hook_user_load' => t('Every time a user object is loaded from the database.') . ' (' . t('More real-time, best if there are frequent changes.') . ')',
-      'hook_user_login' => t('Every time a user logs in.') . ' (' . t('Less LDAP traffic, best if changes are rare.') . ')',
+      'hook_user_load' => t('Every time a user object is loaded from the database. (More real-time, best if there are frequent changes.)'),
+      'hook_user_login' => t('Every time a user logs in. (Less LDAP traffic, best if changes are rare.)'),
     ),
     '#default_value' => simple_ldap_user_variable_get('simple_ldap_user_sync'),
   );
@@ -245,7 +246,7 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#type' => 'item',
     '#title' => t('Attribute map'),
     '#weight' => 10,
-    '#description' => $table . t('Additional attribute maps can be specified in @file using @variable.', array('@file' => 'settings.php', '@variable' => '$conf[\'simple_ldap_user_attribute_map\']')) . ' ' . t('See @readme for more details', array('@readme' => 'README.txt')),
+    '#description' => $table . t('Additional attribute maps can be specified in settings.php using $conf[\'simple_ldap_user_attribute_map\'].  See README.txt for more details.'),
   );
 
   $attribute_map = simple_ldap_user_variable_get('simple_ldap_user_attribute_map');
@@ -266,7 +267,7 @@ function simple_ldap_user_admin($form, &$form_state) {
       '#options' => $options,
       '#empty_value' => '',
       '#default_value' => $attribute_rdn_selected,
-      '#description' => t('Any of the mapped attributes can be used as the RDN value when provisioning a new LDAP user entry.') . ' ' . t('If set to "None", the Username attribute specified above will be used.'),
+      '#description' => t('Any of the mapped attributes can be used as the RDN value when provisioning a new LDAP user entry.  If set to "None", the Username attribute specified above will be used.'),
       '#disabled' => $readonly,
     );
 
@@ -303,7 +304,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
 
   // Verify LDAP server connectivity.
   if (!$server->bind()) {
-    drupal_set_message(t('Unable to bind to the LDAP server.') . ' ' . l(t('Check the server configuration.'), 'admin/config/people/simple_ldap'), 'warning');
+    drupal_set_message(t('Unable to bind to the LDAP server.  Check the <a href="@url">server configuration.</a>', url('admin/config/people/simple_ldap')), 'warning');
     return $form;
   }
 
@@ -322,7 +323,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
 
   // Build a list of available LDAP attributes, grouped by Object Class
   $options[''] = ' - None - ';
-  foreach ($classes as $class) { 
+  foreach ($classes as $class) {
     if ($class == 'top') {
       continue;
     }
@@ -334,7 +335,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
     }
 
     if (!empty($ldap_must_attrs)) {
-      $unmapped_required += array_combine(array_map('strtolower', $ldap_must_attrs), $ldap_must_attrs); 
+      $unmapped_required += array_combine(array_map('strtolower', $ldap_must_attrs), $ldap_must_attrs);
     }
 
     // Add the may attributes later.
@@ -343,10 +344,10 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
     }
   }
 
-  // Finally, build the form 
+  // Finally, build the form
   $form['header'] = array(
     '#type' => 'markup',
-    '#markup' => t('<p>Select LDAP attributes to map to the Drupal user fields below.  LDAP attributes marked with an askterisk (*) are required by the LDAP schema and must be assigned to a Drupal fields.  LDAP attributes should be mapped to at most one Drupal fields.</p><p>Username, Email and Password mappings are also done on the User tab.</p>'),
+    '#markup' => '<p>' . t('Select LDAP attributes to map to the Drupal user fields below.  LDAP attributes marked with an askterisk (*) are required by the LDAP schema and must be assigned to a Drupal fields.  LDAP attributes should be mapped to at most one Drupal fields.</p><p>Username, Email and Password mappings are also done on the User tab.') . '</p>',
   );
   $form['attributes'] = array(
     '#type' => 'fieldset',
@@ -372,10 +373,8 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
 
   // Give a warning about unmapped attributes.
   if (!empty($unmapped_required)) {
-    drupal_set_message(t('The following attributes are required by the selected user object class(es), but are not mapped. They should be mapped here or given default values in !hook.  If they are not set, writes to LDAP may fail with an %violation. !list', array(
-        '!hook' => '<code>hook_simple_ldap_user_to_ldap_alter()</code>',
+    drupal_set_message(t('The following attributes are required by the selected user object class(es), but are not mapped. They should be mapped here or given default values in <code>hook_simple_ldap_user_to_ldap_alter()</code>.  If they are not set, writes to LDAP may fail with an <em>object class violation</em>. !list', array(
         '!list' => theme('item_list', array('items' => $unmapped_required)),
-        '%violation' => t('object class violation'),
       )), 'warning'
     );
   }
@@ -419,7 +418,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
     '#options' => $options,
     '#default_value' => simple_ldap_user_variable_get('simple_ldap_user_extra_attrs'),
     '#multiple' => TRUE,
-    '#attached' => array( 
+    '#attached' => array(
       'css' => array(
         drupal_get_path('module', 'simple_ldap_user') . '/simple_ldap_user_admin.css',
       ),
@@ -444,14 +443,14 @@ function simple_ldap_user_profile_map_form_submit($form, &$form_state) {
       $attr = substr($key, 27);
       if ($value == 'array') {
         unset($attribute_map[$attr]['#delimiter']);
-      } 
+      }
       else {
         $attribute_map[$attr]["#delimiter"] = ($value == 'cr') ? "\r" : '$';
       }
     }
   }
 
-  // Remove #delimiter from singleton values    
+  // Remove #delimiter from singleton values
   foreach($attribute_map as $key => &$values) {
     if (array_key_exists('#delimiter', $values)) {
       if (count($values) == 2) {
@@ -489,7 +488,7 @@ function simple_ldap_user_import($form, &$form_state) {
 
   $form['users'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('Import these users') . ' (' . count($users) . ')',
+    '#title' => t('Import these users (@count)', array('@count' => count($users))),
     '#options' => $users,
     '#default_value' => array_keys($users),
     '#checkall' => TRUE,

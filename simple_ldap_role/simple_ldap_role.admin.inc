@@ -15,7 +15,8 @@ function simple_ldap_role_admin($form, &$form_state) {
 
   // Verify LDAP server connectivity.
   if (!$server->bind()) {
-    drupal_set_message(t('Unable to bind to the LDAP server.') . ' ' . l(t('Check the server configuration.'), 'admin/config/people/simple_ldap'), 'warning');
+    drupal_set_message(t('Unable to bind to the LDAP server.  Please check the <a href="@url">server configuration.</a>',
+      array('@url', url('admin/config/people/simple_ldap'))), 'warning');
     return $form;
   }
 
@@ -87,8 +88,8 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Search scope'),
     '#options' => array(
-      'sub' => t('Subtree') . ' - ' . t('Search the base DN and all of its children for roles.'),
-      'one' => t('One-level') . ' - ' . t('Do not include children of the base DN while searching for roles.'),
+      'sub' => t('Subtree - Search the base DN and all of its children for roles.'),
+      'one' => t('One-level - Do not include children of the base DN while searching for roles.'),
     ),
     '#required' => TRUE,
     '#default_value' => simple_ldap_role_variable_get('simple_ldap_role_scope'),
@@ -116,7 +117,7 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#prefix' => '<div id="simple-ldap-role-attributes">',
     '#options' => $attributes,
     '#required' => TRUE,
-    '#description' => t('Which LDAP attribute should be mapped to a Drupal role name.') . ' ' . t('This is commonly "cn".'),
+    '#description' => t('Which LDAP attribute should be mapped to a Drupal role name.  This is commonly "cn".'),
     '#disabled' => $readonly,
   );
 
@@ -132,7 +133,7 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#suffix' => '</div>',
     '#options' => $attributes,
     '#required' => TRUE,
-    '#description' => t('Which LDAP attribute defines the members of the role.') . ' ' . t('This is commonly "member".'),
+    '#description' => t('Which LDAP attribute defines the members of the role.  This is commonly "member".'),
     '#disabled' => $readonly,
     '#ajax' => array(
       'callback' => 'simple_ldap_role_attribute_member_ajax',
@@ -157,7 +158,7 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Search filter'),
     '#default_value' => simple_ldap_role_variable_get('simple_ldap_role_filter'),
-    '#description' => t('This filter will be combined with the normal search filter to find groups.') . ' ' . t('This can be used to require a certain attribute be present, for example.'),
+    '#description' => t('This filter will be combined with the normal search filter to find groups.  This can be used to require a certain attribute be present, for example.'),
   );
 
   $form['advanced']['simple_ldap_role_source'] = array(
@@ -176,8 +177,8 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Synchronization trigger'),
     '#options' => array(
-      'hook_user_load' => t('Every time a user object is loaded from the database.') . ' (' . t('More real-time, best if there are frequent changes.') . ')',
-      'hook_user_login' => t('Every time a user logs in.') . ' (' . t('Less LDAP traffic, best if changes are rare.') . ')',
+      'hook_user_load' => t('Every time a user object is loaded from the database. (More real-time, best if there are frequent changes.)'),
+      'hook_user_login' => t('Every time a user logs in. (Less LDAP traffic, best if changes are rare.)'),
     ),
     '#default_value' => simple_ldap_role_variable_get('simple_ldap_role_sync'),
   );
@@ -205,7 +206,7 @@ function simple_ldap_role_admin($form, &$form_state) {
     '#title' => t('Default group member') . $note . $readonly_note,
     '#default_value' => simple_ldap_role_variable_get('simple_ldap_role_attribute_member_default'),
     '#disabled' => $server->readonly,
-    '#description' => t('If the selected member attribute is a required attribute of the selected objectclass, then every LDAP group must have at least one member.') . ' ' . t('The value here will be used as that default member in the event that the group would otherwise be empty.') . ' ' . t('Leave this blank if the group should be deleted instead.'),
+    '#description' => t('If the selected member attribute is a required attribute of the selected objectclass, then every LDAP group must have at least one member.  The value here will be used as that default member in the event that the group would otherwise be empty.  Leave this blank if the group should be deleted instead.'),
     '#prefix' => '<div id="simple-ldap-role-attribute-member-default">',
     '#suffix' => '</div>',
   );

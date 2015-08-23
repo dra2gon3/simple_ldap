@@ -10,12 +10,12 @@
  */
 function simple_ldap_sso_admin() {
   $session_inc_path = drupal_get_path('module', 'simple_ldap_sso') . '/simple_ldap_sso.session.inc';
-  $t_args = array('!path' => $session_inc_path);
+  $t_args = array('@path' => $session_inc_path);
   if (variable_get('session_inc') != $session_inc_path) {
     $form['session_inc'] = array(
       '#type' => 'textfield',
       '#title' => t('Drupal Session Include File'),
-      '#description' => t('The file used to handle Drupal user sessions. This should be set to !path.', $t_args),
+      '#description' => t('The file used to handle Drupal user sessions. This should be set to @path.', $t_args),
       '#default_value' => variable_get('session_inc'),
     );
   }
