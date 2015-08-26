@@ -123,7 +123,7 @@ function simple_ldap_sso_get_attribute_options() {
   // Initialize a Simple LDAP Server object. Used for dropdown options.
   $server = SimpleLdapServer::singleton();
 
-  $objectclass = variable_get('simple_ldap_user_objectclass', array('inetorgperson'));
+  $objectclass = simple_ldap_variable_get('simple_ldap_user_objectclass');
 
   $attributes = array();
 

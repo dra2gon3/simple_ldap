@@ -28,6 +28,7 @@ function simple_ldap_user_uninstall() {
   variable_del('simple_ldap_user_basedn');
   variable_del('simple_ldap_user_scope');
   variable_del('simple_ldap_user_objectclass');
+  variable_del('simple_ldap_user_auxiliaryclasses');
   variable_del('simple_ldap_user_attribute_name');
   variable_del('simple_ldap_user_attribute_mail');
   variable_del('simple_ldap_user_attribute_pass');
@@ -67,13 +68,13 @@ function simple_ldap_user_requirements($phase) {
 function simple_ldap_user_update_7100(&$sandbox) {
 
   // simple_ldap_user_objectclass should be an array.
-  $objectclass = variable_get('simple_ldap_user_objectclass');
+  $objectclass = variable_get('simple_ldap_user_objectclass', NULL);
   if (!is_array($objectclass)) {
     variable_set('simple_ldap_user_objectclass', array($objectclass));
   }
 
   // simple_ldap_user_map has changed name and format.
-  $attribute_map = variable_get('simple_ldap_user_map');
+  $attribute_map = variable_get('simple_ldap_user_map', array());
   if (!empty($attribute_map)) {
     return t('The "simple_ldap_user_map" variable has changed name and format.  The new variable name is "simple_ldap_user_attribute_map", and the format is outlined in simple_ldap_user/README.txt.  Please update settings.php accordingly.');
   }
@@ -84,4 +85,14 @@ function simple_ldap_user_update_7100(&$sandbox) {
  */
 function simple_ldap_user_update_7101(&$sandbox) {
   variable_del('simple_ldap_user_delete');
+}
+
+/**
+ * Did we say simple_ldap_user_objectclass should be an array?  Yeah, no.
+ */
+function simple_ldap_user_update_7102(&$sandbox) {
+  $user_object_class = variable_get('simple_ldap_user_objectclass', NULL);
+  if (is_array($user_object_class)) {
+    variable_set('simple_ldap_user_objectclass', $user_object_class[0]);
+  }
 }

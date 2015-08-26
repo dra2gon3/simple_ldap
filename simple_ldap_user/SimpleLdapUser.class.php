@@ -300,7 +300,9 @@ class SimpleLdapUser {
     else {
       // Create new entry.
       try {
-        $this->attributes['objectclass'] = simple_ldap_user_parent_objectclasses(simple_ldap_user_variable_get('simple_ldap_user_objectclass'));
+        $base_class = simple_ldap_user_variable_get('simple_ldap_user_objectclass');
+        $object_classes = array($base_class => $base_class) + simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
+        $this->attributes['objectclass'] = simple_ldap_user_parent_objectclasses($object_classes);
         $this->server->add($this->dn, $this->attributes);
       } catch (SimpleLdapException $e) {
         if ($e->getCode() == 68) {
@@ -361,7 +363,7 @@ class SimpleLdapUser {
     $extrafilter = simple_ldap_user_variable_get('simple_ldap_user_filter');
 
     // Construct the filter.
-    $filter = '(&(objectclass=' . implode(')(objectclass=', $objectclass) . '))';
+    $filter = '(objectclass=' . $objectclass . ')';
     if (!empty($extrafilter)) {
       $filter = '(&' . $filter . '(' . $extrafilter . '))';
     }

@@ -1253,7 +1253,7 @@ function simple_ldap_user_variable_get($name, $default = NULL, $force_default = 
   switch ($server->type) {
     case 'Active Directory':
       $defaults = array(
-        'simple_ldap_user_objectclass' => array('user'),
+        'simple_ldap_user_objectclass' => 'user',
         'simple_ldap_user_attribute_name' => 'samaccountname',
         'simple_ldap_user_attribute_mail' => 'mail',
         'simple_ldap_user_attribute_pass' => 'unicodepwd',
@@ -1264,7 +1264,7 @@ function simple_ldap_user_variable_get($name, $default = NULL, $force_default = 
 
     default:
       $defaults = array(
-        'simple_ldap_user_objectclass' => array('inetorgperson'),
+        'simple_ldap_user_objectclass' => 'inetorgperson',
         'simple_ldap_user_attribute_name' => 'cn',
         'simple_ldap_user_attribute_mail' => 'mail',
         'simple_ldap_user_attribute_pass' => 'userpassword',
@@ -1273,6 +1273,7 @@ function simple_ldap_user_variable_get($name, $default = NULL, $force_default = 
   }
 
   // Define defaults that do not depend on LDAP server type.
+  $defaults['simple_ldap_user_auxiliaryclasses'] = array();
   $defaults['simple_ldap_user_basedn'] = $server->basedn;
   $defaults['simple_ldap_user_scope'] = 'sub';
   $defaults['simple_ldap_user_source'] = 'ldap';
