@@ -1200,6 +1200,66 @@ function simple_ldap_user_parent_objectclasses($classes) {
 }
 
 /**
+ * Pull the selected LDAP object classes for users
+ *
+ */
+function simple_ldap_user_profile_classes($include_auxiliary = TRUE) {
+  // Pull the LDAP objectClasses selected for users, plus any parent classes.
+  $objectclass = simple_ldap_user_variable_get('simple_ldap_user_objectclass');
+  $classes = array($objectclass => $objectclass);
+  if ($include_auxiliary) {
+    $classes += simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
+  }
+  $classes = simple_ldap_user_parent_objectclasses($classes);
+
+  return $classes;
+}
+
+/**
+ * Given an array of objectClasses, return an array with the attributes in a
+ * hierarchy, grouped by objectClass, and suitable for FAPI select elements.
+ *
+ * @param array
+ *  An array of classes.
+ *
+ * @return array
+ *  An array of attributes to be fed to FAPI select elements.
+ */
+function simple_ldap_user_class_attrs_as_options($classes) {
+  // Get an LDAP server object.
+  $server = SimpleLdapServer::singleton();
+
+  // Verify LDAP server connectivity, return NULL (error) if unable to bind
+  if (!$server->bind()) {
+    return NULL;
+  }
+
+  // Pull the available LDAP schemas from the server
+  $schema = $server->schema;
+
+    // Build a list of available LDAP attributes, grouped by Object Class
+  $options[''] = ' - None - ';
+  foreach ($classes as $class) {
+    if ($class == 'top') {
+      continue;
+    }
+
+    // Add a * to must attributes, to indiciate it must be set.
+    $ldap_must_attrs = $schema->must($class);
+    foreach($ldap_must_attrs as $attribute) {
+      $options[$class][strtolower($attribute)] = $attribute . '*';
+    }
+
+    // Add the may attributes later.
+    foreach($schema->may($class) as $attribute) {
+      $options[$class][strtolower($attribute)] = $attribute;
+    }
+  }
+
+  return $options;
+}
+
+/**
  * Returns the value for the specified variable.
  *
  * This function takes into account the configured LDAP server type, and

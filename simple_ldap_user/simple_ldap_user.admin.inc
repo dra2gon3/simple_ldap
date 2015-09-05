@@ -28,8 +28,10 @@ function simple_ldap_user_admin($form, &$form_state) {
 
   // Generate a list of structural and auxiliary object classes supported by
   // the server.
-  $auxiliary_classes_options = asort($server->schema->auxiliary('name'));
-  $object_classes_options = asort($server->schema->structural('name'));
+  $auxiliary_classes_options = $server->schema->auxiliary('name');
+  $object_classes_options = $server->schema->structural('name');
+  asort($auxiliary_classes_options);
+  asort($object_classes_options);
 
   // Derive directory-specific values to use in the form.
   switch ($server->type) {
@@ -55,33 +57,28 @@ function simple_ldap_user_admin($form, &$form_state) {
     case 'OpenLDAP':
     default:
       $readonly = FALSE;
-      $object_class_selected = isset($form_state['values']['simple_ldap_user_objectclass']) ? $form_state['values']['simple_ldap_user_objectclass'] : simple_ldap_user_variable_get('simple_ldap_user_objectclass');
-      $auxiliary_classes_selected = isset($form_state['values']['simple_ldap_user_auxiliaryclasses']) ? $form_state['values']['simple_ldap_user_auxiliaryclasses'] : simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
-      $attribute_name_selected = isset($form_state['values']['simple_ldap_user_attribute_name']) ? $form_state['values']['simple_ldap_user_attribute_name'] : simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
-      $attribute_mail_selected = isset($form_state['values']['simple_ldap_user_attribute_mail']) ? $form_state['values']['simple_ldap_user_attribute_mail'] : simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
-      $attribute_pass_selected = isset($form_state['values']['simple_ldap_user_attribute_pass']) ? $form_state['values']['simple_ldap_user_attribute_pass'] : simple_ldap_user_variable_get('simple_ldap_user_attribute_pass');
+      $object_class_selected = isset($form_state['values']['simple_ldap_user_objectclass']) ?
+        $form_state['values']['simple_ldap_user_objectclass'] :
+        simple_ldap_user_variable_get('simple_ldap_user_objectclass');
+      $auxiliary_classes_selected = isset($form_state['values']['simple_ldap_user_auxiliaryclasses']) ?
+        $form_state['values']['simple_ldap_user_auxiliaryclasses'] :
+        simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
+      $attribute_name_selected = isset($form_state['values']['simple_ldap_user_attribute_name']) ?
+        $form_state['values']['simple_ldap_user_attribute_name'] :
+        simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
+      $attribute_mail_selected = isset($form_state['values']['simple_ldap_user_attribute_mail']) ?
+        $form_state['values']['simple_ldap_user_attribute_mail'] :
+        simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
+      $attribute_pass_selected = isset($form_state['values']['simple_ldap_user_attribute_pass']) ?
+        $form_state['values']['simple_ldap_user_attribute_pass'] :
+        simple_ldap_user_variable_get('simple_ldap_user_attribute_pass');
       $password_hash_selected = simple_ldap_user_variable_get('simple_ldap_user_password_hash');
       $attribute_rdn_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_rdn');
 
-      // Generate a list of attributes for the selected objectclass.
-      $attributes = $flat_attr_list = array();
-      $all_classes = array($object_class_selected => $object_class_selected) + $auxiliary_classes_selected;
-      foreach ($all_classes as $objectclass) {
-        try {
-          $result = $server->schema->attributes($objectclass, TRUE);
-          $oc_attributes = array();
-          foreach ($result as $attribute) {
-            $oc_attributes[strtolower($attribute)] = $attribute;
-          }
-          asort($oc_attributes);
-          $attributes[$objectclass] = $oc_attributes;
-          $flat_attr_list += $oc_attributes;
-        } catch (SimpleLdapException $e) {
-          // Just absorb the exception. This means that an objectclass was
-          // specified that does not exist on the server. Just don't add any
-          // attributes to the list in this case.
-        }
-      }
+      // Get the list of selected classes, pull all valid attributes for them.
+      $classes = simple_ldap_user_parent_objectclasses($object_class_selected);
+      $classes = array_merge($classes,simple_ldap_user_parent_objectclasses($auxiliary_classes_selected));
+      $attributes = simple_ldap_user_class_attrs_as_options($classes);
   }
 
   $form['user'] = array(
@@ -147,13 +144,8 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#required' => TRUE,
     '#description' => t('Which LDAP attribute should be mapped to a Drupal username.  This is commonly "cn" or "uid".'),
     '#disabled' => $readonly,
+    '#default_value' => $attribute_name_selected,
   );
-
-  // Set default value if it exists in the list of attributes. If a default
-  // value is not set, the empty option is selected.
-  if (array_key_exists($attribute_name_selected, $flat_attr_list)) {
-    $form['user']['simple_ldap_user_attribute_name']['#default_value'] = $attribute_name_selected;
-  }
 
   $form['user']['simple_ldap_user_attribute_mail'] = array(
     '#type' => 'select',
@@ -162,13 +154,8 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#required' => TRUE,
     '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s email address.  This is commonly "mail".'),
     '#disabled' => $readonly,
+    '#default_value' => $attribute_mail_selected,
   );
-
-  // Set default value if it exists in the list of attributes. If a default
-  // value is not set, the empty option is selected.
-  if (array_key_exists($attribute_mail_selected, $flat_attr_list)) {
-    $form['user']['simple_ldap_user_attribute_mail']['#default_value'] = $attribute_mail_selected;
-  }
 
   $form['user']['simple_ldap_user_attribute_pass'] = array(
     '#type' => 'select',
@@ -178,13 +165,8 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s password.  This is only used for password resets, not for authentication, and is commonly "userPassword".'),
     '#disabled' => $readonly || $server->readonly,
     '#empty_value' => FALSE,
+    '#default_value' => $attribute_pass_selected,
   );
-
-  // Set default value if it exists in the list of attributes. If a default
-  // value is not set, the empty option is selected.
-  if (array_key_exists($attribute_pass_selected, $flat_attr_list)) {
-    $form['user']['simple_ldap_user_attribute_pass']['#default_value'] = $attribute_pass_selected;
-  }
 
   $form['user']['simple_ldap_user_password_hash'] = array(
     '#type' => 'select',
@@ -318,52 +300,13 @@ function simple_ldap_user_objectclass_ajax($form, $form_state) {
 function simple_ldap_user_profile_map_form($form, $form_state) {
   $form = array();
 
-  // Get an LDAP server object.
-  $server = SimpleLdapServer::singleton();
-
-  // Verify LDAP server connectivity.
-  if (!$server->bind()) {
-    drupal_set_message(t('Unable to bind to the LDAP server.  Check the <a href="@url">server configuration.</a>', url('admin/config/people/simple_ldap')), 'warning');
-    return $form;
-  }
-
-  // Pull the available LDAP schemas from the server
-  $schema = $server->schema;
-
-  // Pull the LDAP objectClasses selected for users, plus any parent classes.
-  $objectclass = simple_ldap_user_variable_get('simple_ldap_user_objectclass');
-  $classes = array($objectclass => $objectclass);
-  $classes += simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
-  $classes = simple_ldap_user_parent_objectclasses($classes);
-
   // Pull the fields defined for user profiles
   // ToDo: Support user profile modules
   $user_fields = simple_ldap_user_user_fields();
 
   $unmapped_required = array();
-
-  // Build a list of available LDAP attributes, grouped by Object Class
-  $options[''] = ' - None - ';
-  foreach ($classes as $class) {
-    if ($class == 'top') {
-      continue;
-    }
-
-    // Add a * to must attributes, to indiciate it must be set.
-    $ldap_must_attrs = $schema->must($class);
-    foreach($ldap_must_attrs as $attribute) {
-      $options[$class][strtolower($attribute)] = $attribute . '*';
-    }
-
-    if (!empty($ldap_must_attrs)) {
-      $unmapped_required += array_combine(array_map('strtolower', $ldap_must_attrs), $ldap_must_attrs);
-    }
-
-    // Add the may attributes later.
-    foreach($schema->may($class) as $attribute) {
-      $options[$class][strtolower($attribute)] = $attribute;
-    }
-  }
+  $classes = simple_ldap_user_profile_classes();
+  $options = simple_ldap_user_class_attrs_as_options($classes);
 
   // Finally, build the form
   $form['header'] = array(
