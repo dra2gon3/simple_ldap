@@ -173,6 +173,49 @@ class SimpleLdapSchema {
   }
 
   /**
+   * Return a list of structural object classes.
+   *
+   * @param string $attribute
+   *  If specified, return just the named attribute instead of the whole
+   *  objectClass definition.
+   *
+   * @return array
+   *  A list of structural classes keyed by the classname.
+   */
+  function structural($attribute = NULL) {
+    $object_classes = $this->get('objectclasses');
+    $structural = array();
+    foreach ($object_classes as $key => $objectclass) {
+      if (!empty($objectclass['structural'])) {
+        $structural[$key] = ($attribute) ? $objectclass[$attribute] : $objectclass;
+      }
+    }
+    return $structural;
+  }
+
+  /**
+   * Return a list of auxiliary object classes.
+   *
+   * @param string $attribute
+   *  If specified, return just the named attribute instead of the whole
+   *  objectClass definition.
+   *
+   * @return array
+   *  A list of auxiliary classes keyed by the classname.
+   */
+  function auxiliary($attribute = NULL) {
+    $object_classes = $this->get('objectclasses');
+    $auxiliary = array();
+    foreach ($object_classes as $key => $objectclass) {
+      if (!empty($objectclass['auxiliary'])) {
+        $auxiliary[$key] = $attribute ? $objectclass[$attribute] : $objectclass;
+      }
+    }
+    return $auxiliary;
+  }
+
+
+  /**
    * Return a list of attributes defined for the objectclass.
    *
    * @param string $objectclass

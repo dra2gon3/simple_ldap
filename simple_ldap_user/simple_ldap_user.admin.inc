@@ -26,20 +26,10 @@ function simple_ldap_user_admin($form, &$form_state) {
   // String to append to items disabled by $server->readonly.
   $disabled_note = $server->readonly ? t('(Disabled by LDAP Server configuration.)') : '';
 
-  // Generate a list of object classes supported by the server.
-  $objectclasses = $server->schema->get('objectclasses');
-  $object_classes_options = $auxiliary_classes_options = array();
-  foreach ($objectclasses as $key => $objectclass) {
-    if (!empty($objectclass['auxiliary'])) {
-      $auxiliary_classes_options[$key] = $objectclass['name'];
-    }
-
-    if (!empty($objectclass['structural'])) {
-      $object_classes_options[$key] = $objectclass['name'];
-    }
-  }
-  asort($object_classes_options);
-  asort($auxiliary_classes_options);
+  // Generate a list of structural and auxiliary object classes supported by
+  // the server.
+  $auxiliary_classes_options = asort($server->schema->auxiliary('name'));
+  $object_classes_options = asort($server->schema->structural('name'));
 
   // Derive directory-specific values to use in the form.
   switch ($server->type) {
