@@ -56,11 +56,15 @@ function simple_ldap_admin() {
     '#description' => t('Leave this blank to bind anonymously'),
   );
 
+  $form['directory']['old_simple_ldap_bindpw'] = array(
+    '#type' => 'value',
+    '#value' => variable_get('simple_ldap_bindpw', ''),
+  );
+
   $form['directory']['simple_ldap_bindpw'] = array(
     '#type' => 'password',
     '#title' => t('Bind password'),
-    '#description' => t('Leave this blank to bind anonymously'),
-    '#attributes' => array('value' => array(variable_get('simple_ldap_bindpw', ''))),
+    '#description' => t('Leave this blank to keep the existing password.'),
   );
 
   $form['directory']['simple_ldap_basedn'] = array(
@@ -137,7 +141,15 @@ function simple_ldap_admin() {
     '#default_value' => variable_get('simple_ldap_debug', FALSE),
   );
 
+  $form['#submit'][] = 'simple_ldap_admin_submit';
   return system_settings_form($form);
+}
+
+function simple_ldap_admin_submit($form, &$form_state) {
+  if (empty($form_state['values']['simple_ldap_bindpw'])) {
+    $form_state['values']['simple_ldap_bindpw'] = $form_state['values']['old_simple_ldap_bindpw'];
+  }
+  unset($form_state['values']['old_simple_ldap_bindpw']);
 }
 
 /**
