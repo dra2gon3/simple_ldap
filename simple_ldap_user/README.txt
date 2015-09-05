@@ -13,60 +13,54 @@ In addition to the configuration available in the administration UI, an
 attribute map can be specified in settings.php, using the variable
 $conf['simple_ldap_user_attribute_map'].
 
-This variable is an array of arrays, where each of the arrays have the
-following items:
+This variable is an array of key => value pairs.  The keys are the LDAP
+attributes (lowercased) and the values are arrays of Drupal User field names.
+This must be the machine name of the field.
 
-* drupal - The field name on the Drupal user. This must be the machine name of
-	   the field.
+If two or more Drupal User field names are present, an entry with the key
+'#delimiter' MAY be added to mark how the LDAP field should be split.  If no
+'#delimiter' entry is present, then Simple LDAP will map the user fields ot
+a multivalue LDAP attribute.  Typical '#delimiter' values are '$' and "\r".
 
-	   This can also be an array of drupal fields. If the array contains
-	   more than one entry, synchronization for that map only works in the
-	   drupal->ldap direction, and the fields are concatenated with a
-	   space separator.
-
-           A field type can be specified by prefixing the field name. If no
-	   prefix is given, it is assumed that the field is a direct user
-	   object attribute, such as uid, name, or pass.
-
-	   # - Custom fields added to the user object via the Field API.
-
-* ldap - The LDAP attribute on the LDAP user.
+The administration page at admin/config/people/simple_ldap/profile will create
+a valid simple_ldap_user_attribute_map for most installs.
 
 Example:
 --------
 $conf['simple_ldap_user_attribute_map'] = array(
 
   // Generic example.
-  array(
-    'drupal' => '#drupal-user-field-machine-name',
-    'ldap' => 'ldap-attribute',
+  'ldap-attribute' => array(
+    'drupal-user-field-machine-name',
   ),
 
   // First name example.
-  array(
-    'drupal' => '#field_first_name',
-    'ldap' => 'givenName',
+  'givenname' => array(
+    'field_first_name',
   ),
 
   // Last name example.
-  array(
-    'drupal' => '#field_last_name',
-    'ldap' => 'sn',
+  'sn' => array(
+    'field_last_name',
   ),
 
   // Timezone example (saved directly to users table, note there is no '#').
-  array(
-    'drupal' => 'timezone',
-    'ldap' => 'l',
+  'l' => array(
+    'timezone',
   ),
 
   // Combined fields example.
-  array(
-    'drupal' => array(
-      '#field_first_name',
-      '#field_last_name',
+  'displayname' => array(
+      'field_first_name',
+      'field_last_name',
+      '#delimiter' => ' ',
     ),
-    'ldap' => 'displayName',
+  ),
+
+  'street' => array(
+    'field_street_1',
+    'field_street_2',
+    '#delimiter' => "\r",
   ),
 
 );
@@ -74,27 +68,20 @@ $conf['simple_ldap_user_attribute_map'] = array(
 Active Directory Example:
 -------------------------
 $conf['simple_ldap_user_attribute_map'] = array(
-  array(
-    'drupal' => '#field_first_name',
-    'ldap' => 'givenName',
+  'givenname' => array(
+    'field_first_name',
   ),
-  array(
-    'drupal' => '#field_last_name',
-    'ldap' => 'sn',
+  sn => array(
+    'field_last_name',
   ),
-  array(
-    'drupal' => array(
-      '#field_first_name',
-      '#field_last_name',
-    ),
-    'ldap' => 'CN',
+  'cn' => array(
+    'field_first_name',
+    'field_last_name',
   ),
-  array(
-    'drupal' => array(
-      '#field_first_name',
-      '#field_last_name',
-    ),
-    'ldap' => 'displayName',
+  'displayname' => array(
+    'field_first_name',
+    'field_last_name',
+    '#delimiter' => ' ',
   ),
 );
 
