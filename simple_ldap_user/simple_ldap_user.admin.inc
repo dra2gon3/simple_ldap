@@ -385,6 +385,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
     '#title' => t('Drupal Fields to LDAP Attributes'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+    '#weight' => 10,
   );
 
   foreach($user_fields as $key => $field) {
@@ -433,6 +434,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
       '#title' => t('Multiple Value Field Delimiters'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
+      '#weight' => 20,
     );
   }
 
@@ -441,6 +443,7 @@ function simple_ldap_user_profile_map_form($form, $form_state) {
     '#title' => t('Load Additional Attributes'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+    '#weight' => 30,
   );
   $form['extra_attrs_fieldset']['simple_ldap_user_extra_attrs'] = array(
     '#type' => 'select',
