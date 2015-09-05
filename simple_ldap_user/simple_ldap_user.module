@@ -5,6 +5,18 @@
  */
 
 /**
+ * Implements hook_permission()
+ */
+function simple_ldap_permission() {
+  return array(
+    'view own ldap data' => array(
+      'title' => t('View own LDAP data'),
+      'description' => t('Display LDAP information on the user\'s own profile page.'),
+    ),
+  );
+}
+
+/**
  * Implements hook_menu().
  */
 function simple_ldap_user_menu() {
@@ -573,6 +585,36 @@ function simple_ldap_user_profile_form_validate($form, &$form_state) {
     }
     if (($user_dn !== $mail_dn) && $ldap_user_by_mail->exists) {
       form_set_error('mail', t('Another user has that email address.'));
+    }
+  }
+}
+
+/**
+ * Implements hook_user_view()
+ *
+ * Adds an LDAP block to the user profile page if the viewing user
+ * has sufficient permissions.
+ */
+function simple_ldap_user_view($account, $view_mode, $langcode) {
+  global $user;
+
+  if (user_access('administer users') || (($user->uid == $account->uid) && user_access('view own ldap data'))) {
+    $query = db_query("SELECT authname FROM {authmap} WHERE module = 'simple_ldap' AND uid = :uid", array(':uid' => $account->uid));
+    while($row = $query->fetchAssoc()) {
+      $dn_list[] = $row['authname'];
+    }
+    if (!empty($dn_list)) {
+      $account->content['ldap'] = array(
+        '#type' => 'user_profile_category',
+        '#title' => t("LDAP"),
+        '#weight' => 30,
+      );
+      $account->content['ldap']['simple_ldap'] = array(
+        '#type' => 'user_profile_item',
+        '#title' => t('DNs'),
+        '#markup' => theme('item_list', array('items' => $dn_list)),
+        '#attributes' => array('class' => 'simple_ldap'),
+      );
     }
   }
 }
