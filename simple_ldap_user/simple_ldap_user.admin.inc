@@ -33,53 +33,28 @@ function simple_ldap_user_admin($form, &$form_state) {
   asort($auxiliary_classes_options);
   asort($object_classes_options);
 
-  // Derive directory-specific values to use in the form.
-  switch ($server->type) {
-    case 'Active Directory':
-      $readonly = TRUE;
-      $object_class_selected = simple_ldap_user_variable_get('simple_ldap_user_objectclass', NULL, TRUE);
-      $auxiliary_classes_selected = simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses', NULL, TRUE);
-      $attribute_name_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_name', NULL, TRUE);
-      $attribute_mail_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_mail', NULL, TRUE);
-      $attribute_pass_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_pass', NULL, TRUE);
-      $password_hash_selected = simple_ldap_user_variable_get('simple_ldap_user_password_hash', NULL, TRUE);
-      $attribute_rdn_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_rdn', NULL, TRUE);
+  $object_class_selected = isset($form_state['values']['simple_ldap_user_objectclass']) ?
+    $form_state['values']['simple_ldap_user_objectclass'] :
+    simple_ldap_user_variable_get('simple_ldap_user_objectclass');
+  $auxiliary_classes_selected = isset($form_state['values']['simple_ldap_user_auxiliaryclasses']) ?
+    $form_state['values']['simple_ldap_user_auxiliaryclasses'] :
+    simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
+  $attribute_name_selected = isset($form_state['values']['simple_ldap_user_attribute_name']) ?
+    $form_state['values']['simple_ldap_user_attribute_name'] :
+    simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
+  $attribute_mail_selected = isset($form_state['values']['simple_ldap_user_attribute_mail']) ?
+    $form_state['values']['simple_ldap_user_attribute_mail'] :
+    simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
+  $attribute_pass_selected = isset($form_state['values']['simple_ldap_user_attribute_pass']) ?
+    $form_state['values']['simple_ldap_user_attribute_pass'] :
+    simple_ldap_user_variable_get('simple_ldap_user_attribute_pass');
+  $password_hash_selected = simple_ldap_user_variable_get('simple_ldap_user_password_hash');
+  $attribute_rdn_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_rdn');
 
-      // Generate a list of attributes for the selected objectclass.
-      $attributes = array(
-        $attribute_name_selected => $attribute_name_selected,
-        $attribute_mail_selected => $attribute_mail_selected,
-        $attribute_pass_selected => $attribute_pass_selected,
-        $attribute_rdn_selected => $attribute_rdn_selected,
-      );
-      break;
-
-    case 'OpenLDAP':
-    default:
-      $readonly = FALSE;
-      $object_class_selected = isset($form_state['values']['simple_ldap_user_objectclass']) ?
-        $form_state['values']['simple_ldap_user_objectclass'] :
-        simple_ldap_user_variable_get('simple_ldap_user_objectclass');
-      $auxiliary_classes_selected = isset($form_state['values']['simple_ldap_user_auxiliaryclasses']) ?
-        $form_state['values']['simple_ldap_user_auxiliaryclasses'] :
-        simple_ldap_user_variable_get('simple_ldap_user_auxiliaryclasses');
-      $attribute_name_selected = isset($form_state['values']['simple_ldap_user_attribute_name']) ?
-        $form_state['values']['simple_ldap_user_attribute_name'] :
-        simple_ldap_user_variable_get('simple_ldap_user_attribute_name');
-      $attribute_mail_selected = isset($form_state['values']['simple_ldap_user_attribute_mail']) ?
-        $form_state['values']['simple_ldap_user_attribute_mail'] :
-        simple_ldap_user_variable_get('simple_ldap_user_attribute_mail');
-      $attribute_pass_selected = isset($form_state['values']['simple_ldap_user_attribute_pass']) ?
-        $form_state['values']['simple_ldap_user_attribute_pass'] :
-        simple_ldap_user_variable_get('simple_ldap_user_attribute_pass');
-      $password_hash_selected = simple_ldap_user_variable_get('simple_ldap_user_password_hash');
-      $attribute_rdn_selected = simple_ldap_user_variable_get('simple_ldap_user_attribute_rdn');
-
-      // Get the list of selected classes, pull all valid attributes for them.
-      $classes = simple_ldap_user_parent_objectclasses($object_class_selected);
-      $classes = array_merge($classes,simple_ldap_user_parent_objectclasses($auxiliary_classes_selected));
-      $attributes = simple_ldap_user_class_attrs_as_options($classes);
-  }
+  // Get the list of selected classes, pull all valid attributes for them.
+  $classes = simple_ldap_user_parent_objectclasses($object_class_selected);
+  $classes = array_merge($classes,simple_ldap_user_parent_objectclasses($auxiliary_classes_selected));
+  $attributes = simple_ldap_user_class_attrs_as_options($classes);
 
   $form['user'] = array(
     '#type' => 'fieldset',
@@ -113,7 +88,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#required' => TRUE,
     '#multiple' => FALSE,
     '#description' => t('Which LDAP structural objectClass should be used when searching for, or creating, a user.'),
-    '#disabled' => $readonly,
     '#ajax' => array(
       'callback' => 'simple_ldap_user_objectclass_ajax',
       'wrapper' => 'simple-ldap-user-attributes',
@@ -129,7 +103,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#multiple' => TRUE,
     '#size' => 10,
     '#description' => t('Which LDAP auxiliary object classes, if any, should be used when searching for, or creating, a user.'),
-    '#disabled' => $readonly,
     '#ajax' => array(
       'callback' => 'simple_ldap_user_objectclass_ajax',
       'wrapper' => 'simple-ldap-user-attributes',
@@ -143,7 +116,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#options' => $attributes,
     '#required' => TRUE,
     '#description' => t('Which LDAP attribute should be mapped to a Drupal username.  This is commonly "cn" or "uid".'),
-    '#disabled' => $readonly,
     '#default_value' => $attribute_name_selected,
   );
 
@@ -153,7 +125,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#options' => $attributes,
     '#required' => TRUE,
     '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s email address.  This is commonly "mail".'),
-    '#disabled' => $readonly,
     '#default_value' => $attribute_mail_selected,
   );
 
@@ -163,7 +134,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#suffix' => '</div>',
     '#options' => $attributes,
     '#description' => t('Which LDAP attribute should be mapped to a Drupal user\'s password.  This is only used for password resets, not for authentication, and is commonly "userPassword".'),
-    '#disabled' => $readonly || $server->readonly,
     '#empty_value' => FALSE,
     '#default_value' => $attribute_pass_selected,
   );
@@ -173,7 +143,6 @@ function simple_ldap_user_admin($form, &$form_state) {
     '#title' => t('Password hashing algorithm') . $disabled_note,
     '#options' => SimpleLdap::hashes(),
     '#description' => t('Which encryption algorithm should be used to encrypt passwords when writing to LDAP.'),
-    '#disabled' => $readonly || $server->readonly,
     '#default_value' => $password_hash_selected,
     '#empty_value' => 'none',
   );
@@ -269,7 +238,7 @@ function simple_ldap_user_admin($form, &$form_state) {
       '#empty_value' => '',
       '#default_value' => $attribute_rdn_selected,
       '#description' => t('Any of the mapped attributes can be used as the RDN value when provisioning a new LDAP user entry.  If set to "None", the Username attribute specified above will be used.'),
-      '#disabled' => $readonly,
+      '#disabled' => $server->readonly,
     );
 
     $form['advanced']['simple_ldap_user_unique_attribute'] = array(
