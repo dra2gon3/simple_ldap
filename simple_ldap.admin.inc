@@ -337,7 +337,7 @@ function simple_ldap_server_check() {
   // Add a line identifying the kind of LDAP server we have.
   //
   $results[] = array(
-    'class' => array('ldap-test-error'),
+    'class' => array('ldap-test-information'),
     'data' => array(
       t('Bind to Server'),
       $server->type,
