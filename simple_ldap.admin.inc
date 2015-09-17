@@ -339,7 +339,7 @@ function simple_ldap_server_check() {
   $results[] = array(
     'class' => array('ldap-test-information'),
     'data' => array(
-      t('Bind to Server'),
+      t('Server Type'),
       $server->type,
     ),
   );
