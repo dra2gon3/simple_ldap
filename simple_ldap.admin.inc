@@ -334,6 +334,17 @@ function simple_ldap_server_check() {
   }
 
   //
+  // Add a line identifying the kind of LDAP server we have.
+  //
+  $results[] = array(
+    'class' => array('ldap-test-error'),
+    'data' => array(
+      t('Bind to Server'),
+      $server->type,
+    ),
+  );
+
+  //
   // Test 6 - Load the RootDSE to share some basic data about the server
   //
   try {
