@@ -457,4 +457,13 @@ class SimpleLdapUser {
     return ($result['count'] == 1) ? $result[0] : array();
   }
 
+  /**
+   * Return whether this module allows orphaned users, as set by the module configuration.
+   *
+   * @return boolean
+   *   The read-only status of the module.
+   */
+  public static function allowOrphans() {
+    return simple_ldap_user_variable_get('simple_ldap_user_preserve_orphans');
+  }
 }

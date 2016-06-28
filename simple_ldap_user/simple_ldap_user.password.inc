@@ -231,7 +231,7 @@ function user_hash_password($password, $count_log2 = 0) {
  */
 function user_check_password($password, $account) {
   // Use normal authentication for User1.
-  if ($account->uid == 1) {
+  if ($account->uid == 1  || (!$ldap_user->exists && SimpleLdapUser::allowOrphans())) {
     return simple_ldap_user_check_drupal_password($password, $account);
   }
 

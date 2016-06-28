@@ -52,7 +52,7 @@ class SimpleLdapUserController extends UserController {
         }
       }
 
-      if (!$ldap_user->exists) {
+      if (!$ldap_user->exists && !SimpleLdapUser::allowOrphans()) {
         // Block the user if it does not exist in LDAP.
         $this->blockUser($drupal_user);
       }
